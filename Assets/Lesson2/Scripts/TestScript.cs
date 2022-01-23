@@ -9,7 +9,7 @@ public class TestScript : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        print(gameObject.name);
+        /*print(gameObject.name);
 
         Instantiate(prefab);
         
@@ -17,7 +17,7 @@ public class TestScript : MonoBehaviour
         print(transform.GetChild(0));
 
         print("global position = " + transform.position);
-        print("local position = " + transform.localPosition);
+        print("local position = " + transform.localPosition);*/
 
         /*Debug.Log("Start - Message");
         Debug.LogWarning("Start - Warning");
