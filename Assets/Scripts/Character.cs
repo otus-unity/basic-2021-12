@@ -28,6 +28,7 @@ public class Character : MonoBehaviour
     public Transform target;
     public float runSpeed;
     public float distanceFromEnemy;
+    
     Vector3 originalPosition;
     Quaternion originalRotation;
 
