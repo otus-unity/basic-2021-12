@@ -1,5 +1,5 @@
+using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -9,9 +9,12 @@ public class GameController : MonoBehaviour
     [SerializeField] private CharacterComponent[] enemyCharacters;
 
     private Coroutine gameLoop;
+    private bool waitingForInput;
+    private CharacterComponent currentTarget;
 
     private void Start()
     {
+        waitingForInput = true;
         gameLoop = StartCoroutine(GameLoop());
     }
     
@@ -29,7 +32,13 @@ public class GameController : MonoBehaviour
 
     private CharacterComponent GetTarget(CharacterComponent[] characterComponents)
     {
-        return characterComponents.FirstOrDefault(c => !c.HealthComponent.IsDead);
+        var characterComponent = characterComponents.FirstOrDefault(c => !c.HealthComponent.IsDead);
+        if (characterComponent != null)
+        {
+            characterComponent.IndicatorComponent.EnableTargetIndicator();
+        }
+
+        return characterComponent;
     }
 
     private void GameOver()
@@ -60,57 +69,90 @@ public class GameController : MonoBehaviour
         Debug.Log(isVictory ? "Victory" : "Defeat");
     }
 
-    private IEnumerator Turn(CharacterComponent[] playerCharacters, CharacterComponent[] enemyCharacters)
+    private IEnumerator Turn(CharacterComponent[] playerCharacters, CharacterComponent[]
+        enemyCharacters)
     {
         int turnCounter = 0;
         while (true)
         {
-            for (int i = 0; i < playerCharacters.Length; i++)
+            foreach (var player in playerCharacters)
             {
-                if(playerCharacters[i].HealthComponent.IsDead)
+                if (currentTarget == null)
                 {
-                    Debug.Log("Character: " + playerCharacters[i].name + " is dead");
+                    currentTarget = GetTarget(enemyCharacters);
+                }
+
+                while (waitingForInput)
+                {
+                    yield return null;
+                }
+
+                if (player.HealthComponent.IsDead)
+                {
+                    Debug.Log("Character: " + player.name + " is dead");
                     continue;
                 }
-                
-                playerCharacters[i].SetTarget(GetTarget(enemyCharacters).HealthComponent);
-                
+
+                player.SetTarget(currentTarget.HealthComponent);
+
                 //TODO: hotfix
                 yield return null; // ugly fix need to investigate
-                playerCharacters[i].StartTurn();
-               
-                
-                
-                
-                yield return new WaitUntilCharacterAttack(playerCharacters[i]);
-                
-                
-                
-                
-                Debug.Log("Character: " + playerCharacters[i].name + " finished turn");
+                player.StartTurn();
+                yield return new WaitUntilCharacterAttack(player);
+
+                Debug.Log("Character: " + player.name + " finished turn");
+                waitingForInput = true;
+                currentTarget.IndicatorComponent.DisableTargetIndicator();
+                currentTarget = null;
             }
 
             yield return new WaitForSeconds(.5f);
-
-            for (int i = 0; i < enemyCharacters.Length; i++)
+            foreach (var enemy in enemyCharacters)
             {
-                if (enemyCharacters[i].HealthComponent.IsDead)
+                if (enemy.HealthComponent.IsDead)
                 {
-                    Debug.Log("Enemy character: " + enemyCharacters[i].name + " is dead");
+                    Debug.Log("Enemy character: " + enemy.name + " is dead");
                     continue;
                 }
-               
-                enemyCharacters[i].SetTarget(GetTarget(playerCharacters).HealthComponent);
-                enemyCharacters[i].StartTurn();
-                
-                yield return new WaitUntilCharacterAttack(enemyCharacters[i]);
-                Debug.Log("Enemy character: " + enemyCharacters[i].name + " finished turn");
+
+                var characterComponent = GetTarget(playerCharacters);
+                enemy.SetTarget(characterComponent.HealthComponent);
+                enemy.StartTurn();
+
+                yield return new WaitUntilCharacterAttack(enemy);
+                Debug.Log("Enemy character: " + enemy.name + " finished turn");
+                characterComponent.IndicatorComponent.DisableTargetIndicator();
             }
-
-            yield return new WaitForSeconds(.5f);
-
-            turnCounter++;
-            Debug.Log("Turn #" + turnCounter + " has been ended");
         }
     }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            waitingForInput = false;
+        }
+
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            NextTarget();
+        }
+    }
+
+    private void NextTarget()
+    {
+        int index = Array.IndexOf(enemyCharacters, currentTarget);
+        for (int i = 1; i < enemyCharacters.Length; i++)
+        {
+            int next = (index + i) % enemyCharacters.Length;
+            if (!enemyCharacters[next].HealthComponent.IsDead)
+            {
+                currentTarget.IndicatorComponent.DisableTargetIndicator();
+                currentTarget = enemyCharacters[next];
+                currentTarget.IndicatorComponent.EnableTargetIndicator();
+                return;
+            }
+        }
+    }
+
 }

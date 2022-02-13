@@ -1,12 +1,18 @@
-﻿using UnityEngine;
+﻿using System;
+using Components;
+using DefaultNamespace;
+using UnityEngine;
 
-public class CharacterComponent : MonoBehaviour
+public class CharacterComponent : MonoBehaviour, IDisposable
 {
     [SerializeField] private HealthComponent healthComponent;
+    [SerializeField] private TargetIndicatorComponent targetIndicatorComponent;
     public HealthComponent HealthComponent { get => healthComponent; }
 
     [SerializeField] private AttackComponent attackComponent;
     public AttackComponent AttackComponent { get => attackComponent; }
+
+    public TargetIndicatorComponent IndicatorComponent => targetIndicatorComponent;
 
     private HealthComponent targetHealthComponent;
 
@@ -21,27 +27,44 @@ public class CharacterComponent : MonoBehaviour
         Shoot,
     }
 
-    public enum Weapon
-    {
-        Pistol,
-        Bat,
-    }
-
     Animator animator;
     State state;
 
-    public Weapon weapon;
+    public WeaponData _weapon;
     public float runSpeed;
     public float distanceFromEnemy;
     Vector3 originalPosition;
     Quaternion originalRotation;
-    
+    private static readonly int Dead = Animator.StringToHash("Dead");
+    private static readonly int Speed = Animator.StringToHash("Speed");
+
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
         state = State.Idle;
         originalPosition = transform.position;
         originalRotation = transform.rotation;
+        healthComponent.OnDead += OnDead;
+    }
+
+    private void OnDead()
+    {
+        animator.SetFloat(Dead, runSpeed);
+    }
+
+    private void OnDestroy()
+    {
+        healthComponent.OnDead -= OnDead;
+    }
+
+    ~CharacterComponent()
+    {
+        healthComponent.OnDead -= OnDead;
+    }
+
+    public void Dispose()
+    {
+        healthComponent.OnDead -= OnDead;
     }
 
     public void SetState(State newState)
@@ -70,7 +93,7 @@ public class CharacterComponent : MonoBehaviour
     [ContextMenu("Attack")]
     void AttackEnemy()
     {
-        switch (weapon)
+        switch (_weapon.Weapon)
         {
             case Weapon.Bat:
                 state = State.RunningToEnemy;
@@ -113,17 +136,17 @@ public class CharacterComponent : MonoBehaviour
         {
             case State.Idle:
                 transform.rotation = originalRotation;
-                animator.SetFloat("Speed", 0.0f);
+                animator.SetFloat(Speed, 0.0f);
                 break;
 
             case State.RunningToEnemy:
-                animator.SetFloat("Speed", runSpeed);
+                animator.SetFloat(Speed, runSpeed);
                 if (RunTowards(targetHealthComponent.transform.position, distanceFromEnemy))
                     state = State.BeginAttack;
                 break;
 
             case State.RunningFromEnemy:
-                animator.SetFloat("Speed", runSpeed);
+                animator.SetFloat(Speed, runSpeed);
                 if (RunTowards(originalPosition, 0.0f))
                 {
                     state = State.Idle;
