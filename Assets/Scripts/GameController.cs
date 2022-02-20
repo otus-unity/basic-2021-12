@@ -139,6 +139,16 @@ public class GameController : MonoBehaviour
         }
     }
 
+    public void AttackBtn()
+    {
+        waitingForInput = false;
+    }
+
+    public void SwitchBtn()
+    {
+        NextTarget();
+    }
+
     private void NextTarget()
     {
         int index = Array.IndexOf(enemyCharacters, currentTarget);

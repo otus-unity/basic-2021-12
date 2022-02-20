@@ -13,6 +13,9 @@ public sealed class AttackComponent : MonoBehaviour
     [SerializeField]
     private int damage;
 
+    [SerializeField] 
+    private Animation attackEffect;
+
     public void Attack(GameObject enemy)
     {
         if (!enemy.TryGetComponent(out HealthComponent enemyHealth))
@@ -39,6 +42,8 @@ public sealed class AttackComponent : MonoBehaviour
         }
 
         enemy.ApplyDamage(damage);
+        if (attackEffect) attackEffect.Play();
+        
         this.OnAttackFinished?.Invoke();
     }
 }
