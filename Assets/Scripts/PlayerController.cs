@@ -1,22 +1,23 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    private Collider2D collider2D;
-    private Rigidbody2D rigidbody2D;
-    private Animator animator;
-    private SpriteRenderer spriteRenderer;
+    public Collider2D _collider2D;
+    
+    private Rigidbody2D _rigidbody2D;
+    private Animator _animator;
+    private SpriteRenderer _spriteRenderer;
 
     public LayerMask ground;
     
     void Start()
     {
-        collider2D = GetComponent<Collider2D>();
-        rigidbody2D = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
-        spriteRenderer = GetComponent<SpriteRenderer>();
+        _rigidbody2D = GetComponent<Rigidbody2D>();
+        _animator = GetComponentInChildren<Animator>();
+        _spriteRenderer = GetComponentInChildren<SpriteRenderer>();
     }
     
     void Update()
@@ -25,25 +26,34 @@ public class PlayerController : MonoBehaviour
 
         if (hDirection < 0.0f)
         {
-            rigidbody2D.velocity = new Vector2(-5f, rigidbody2D.velocity.y);
-            spriteRenderer.flipX = true;
-            animator.SetBool("isRunning", true);
+            _rigidbody2D.velocity = new Vector2(-5f, _rigidbody2D.velocity.y);
+            _spriteRenderer.flipX = true;
+            _animator.SetBool("isRunning", true);
         } 
         else if (hDirection > 0.0f)
         {
-            rigidbody2D.velocity = new Vector2(5f, rigidbody2D.velocity.y);
-            spriteRenderer.flipX = false;
-            animator.SetBool("isRunning", true);
+            _rigidbody2D.velocity = new Vector2(5f, _rigidbody2D.velocity.y);
+            _spriteRenderer.flipX = false;
+            _animator.SetBool("isRunning", true);
         }
         else
         {
-            rigidbody2D.velocity = new Vector2(0f, rigidbody2D.velocity.y);
-            animator.SetBool("isRunning", false);
+            _rigidbody2D.velocity = new Vector2(0f, _rigidbody2D.velocity.y);
+            _animator.SetBool("isRunning", false);
         }
 
-        if (Input.GetKeyDown(KeyCode.Space) && collider2D.IsTouchingLayers(ground))
+        if (Input.GetKeyDown(KeyCode.Space) && _collider2D.IsTouchingLayers(ground))
         {
-            rigidbody2D.velocity = new Vector2(rigidbody2D.velocity.x, 5f);
+            Debug.Log("JUMP");
+            _rigidbody2D.velocity = new Vector2(_rigidbody2D.velocity.x, 5f);
+        }
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.CompareTag("Bonus"))
+        {
+            Destroy(other.gameObject);
         }
     }
 }
